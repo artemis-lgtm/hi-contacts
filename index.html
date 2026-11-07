@@ -119,8 +119,7 @@ function hydrateImages(){
 
 function loginView(msg=''){
   $app.innerHTML = `<div class="login"><h1>HI Contacts</h1><p>Higney International trade show contacts</p>
-  <form id="f"><input type="password" id="pw" placeholder="Team password" autocomplete="current-password" autofocus>
-  <label><input type="checkbox" id="rem" checked> Remember on this device</label>
+  <form id="f"><input type="password" id="pw" inputmode="numeric" placeholder="Password" autocomplete="current-password" autofocus>
   <button class="btn primary">Open</button><div class="err">${esc(msg)}</div></form></div>`;
   document.getElementById('f').onsubmit = async e => {
     e.preventDefault();
@@ -128,9 +127,7 @@ function loginView(msg=''){
     try {
       KEY = await deriveKey(pw);
       await loadData();
-      if (document.getElementById('rem').checked) {
-        try { localStorage.setItem(KEYSTORE, b64.to(await crypto.subtle.exportKey('raw', KEY))); } catch(e){}
-      }
+      try { localStorage.setItem(KEYSTORE, b64.to(await crypto.subtle.exportKey('raw', KEY))); } catch(e){}
       route();
     } catch(err){ KEY = null; loginView('That password did not work.'); }
   };
@@ -147,7 +144,8 @@ function filtered(){
   const q = st.q.trim().toLowerCase();
   let list = companies().filter(c =>
     (st.event === 'All' || c.entries.some(e => e.event === st.event)) &&
-    (st.status === 'All' || (c.follow_up?.status || 'new') === st.status) &&
+    (st.status === 'archived' ? c.archived : !c.archived) &&
+    (st.status === 'All' || st.status === 'archived' || (c.follow_up?.status || 'new') === st.status) &&
     (!q || JSON.stringify([c.name, c.category, c.location, c.website, c.tags, c.contacts, c.entries.map(e => e.note), c.follow_up]).toLowerCase().includes(q)));
   list.sort(st.sort === 'az' ? (a,b) => a.name.localeCompare(b.name) : (a,b) => lastDate(b).localeCompare(lastDate(a)));
   return list;
@@ -158,13 +156,13 @@ function firstImage(c){ for (const e of [...c.entries].reverse()) if (e.images?.
 
 function header(){
   return `<header><div class="wrap"><div class="brand" onclick="location.hash=''">HI Contacts<small>Higney International</small></div><div class="spacer"></div>
-  <button class="btn" onclick="exportCsv()">Export CSV</button><button class="btn" onclick="logout()">Lock</button></div></header>`;
+  <button class="btn" onclick="exportCsv()">Export CSV</button></div></header>`;
 }
 
 function listView(){
   const evs = events();
   const list = filtered();
-  const statuses = ['All','new','follow up','contacted','meeting','quoting','won','pass'];
+  const statuses = ['All','new','follow up','contacted','meeting','quoting','won','pass','archived'];
   $app.innerHTML = header() + `<div class="wrap">
   <div class="controls"><input type="search" id="q" placeholder="Search companies, people, notes" value="${esc(st.q)}">
   <select id="status">${statuses.map(s => `<option ${s===st.status?'selected':''}>${s}</option>`).join('')}</select>
