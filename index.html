@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HI Contacts">
+<title>HI Contacts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --ink:#1b1b1a; --muted:#6d6a64; --line:#e4e1da;
+  --accent:#1f3a5f; --accent-ink:#ffffff; --chip:#eeece6; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.04);
+  --s-new:#5b6b7f; --s-follow:#b7791f; --s-contacted:#2b6cb0; --s-meeting:#6b46c1; --s-quoting:#c05621; --s-won:#2f855a; --s-pass:#9b9892;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121212; --panel:#1c1c1c; --ink:#ecebe8; --muted:#9d9a94; --line:#2c2c2a;
+    --accent:#8fb3e0; --accent-ink:#0e1a2a; --chip:#262624; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121212; --panel:#1c1c1c; --ink:#ecebe8; --muted:#9d9a94; --line:#2c2c2a;
+  --accent:#8fb3e0; --accent-ink:#0e1a2a; --chip:#262624; --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px 48px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:12px;padding-top:14px;padding-bottom:14px}
+.brand{font-weight:700;letter-spacing:.02em;font-size:16px;cursor:pointer}
+.brand small{display:block;font-weight:500;color:var(--muted);font-size:12px;letter-spacing:0}
+.spacer{flex:1}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 10px}
+.controls input[type=search]{flex:1 1 240px;min-width:0;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 12px}
+.controls select{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:4px 11px;font-size:13px;cursor:pointer}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.count{color:var(--muted);font-size:13px;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.card .thumb{aspect-ratio:16/9;background:var(--chip);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:28px;font-weight:600}
+.card .thumb img{width:100%;height:100%;object-fit:cover}
+.card .body{padding:11px 13px 13px}
+.card h3{margin:0 0 2px;font-size:15px}
+.meta{color:var(--muted);font-size:13px}
+.pill{display:inline-block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;color:#fff;margin-top:8px}
+.empty{padding:60px 16px;text-align:center;color:var(--muted)}
+.detail h1{font-size:24px;margin:20px 0 4px}
+.back{display:inline-block;margin-top:18px;color:var(--muted);cursor:pointer}
+.facts{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:14px;margin:6px 0 18px}
+.section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.section h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+.person{padding:8px 0;border-top:1px solid var(--line)}
+.person:first-of-type{border-top:0;padding-top:0}
+.person b{font-weight:600}
+.person .links{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;font-size:14px}
+.entry{border-top:1px solid var(--line);padding:12px 0}
+.entry:first-of-type{border-top:0;padding-top:0}
+.entry .when{font-size:13px;color:var(--muted)}
+.entry p{margin:6px 0 0;white-space:pre-wrap}
+.shots{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.shots img{height:130px;max-width:100%;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;object-fit:cover}
+.next{font-size:14px}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
+.lightbox.on{display:flex}
+.lightbox img{max-width:100%;max-height:100%;border-radius:6px}
+.login{max-width:360px;margin:12vh auto 0;padding:0 16px}
+.login h1{font-size:22px;margin:0 0 4px}
+.login p{color:var(--muted);margin:0 0 18px}
+.login input[type=password]{width:100%;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:11px 12px;margin-bottom:10px}
+.login label{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px;margin-bottom:14px}
+.login .btn{width:100%;padding:11px}
+.err{color:#c53030;font-size:14px;min-height:20px;margin-top:8px}
+@media (max-width:520px){.grid{grid-template-columns:1fr}.detail h1{font-size:21px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="lightbox" id="lb" onclick="this.classList.remove('on')"><img id="lbimg" alt=""></div>
+<script>
+const KEYSTORE = 'hic-key-v1';
+const STATUS_COLORS = {'new':'var(--s-new)','follow up':'var(--s-follow)','contacted':'var(--s-contacted)','meeting':'var(--s-meeting)','quoting':'var(--s-quoting)','won':'var(--s-won)','pass':'var(--s-pass)'};
+let KEY = null, DB = null, IMG = {};
+const st = {q:'', event:'All', status:'All', sort:'recent'};
+const $app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const b64 = {to: b => btoa(String.fromCharCode(...new Uint8Array(b))), from: s => Uint8Array.from(atob(s), c => c.charCodeAt(0))};
+
+async function deriveKey(pw){
+  const m = await (await fetch('manifest.json', {cache:'no-store'})).json();
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt:b64.from(m.salt), iterations:m.iter, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, true, ['decrypt']);
+}
+async function open(buf){
+  const u = new Uint8Array(buf);
+  return crypto.subtle.decrypt({name:'AES-GCM', iv:u.slice(0,12)}, KEY, u.slice(12));
+}
+async function loadData(){
+  const r = await fetch('data.bin?' + Date.now(), {cache:'no-store'});
+  DB = JSON.parse(new TextDecoder().decode(await open(await r.arrayBuffer())));
+}
+async function img(id){
+  if (!IMG[id]) IMG[id] = fetch('img/' + id + '.bin').then(r => r.arrayBuffer()).then(open).then(b => URL.createObjectURL(new Blob([b], {type:'image/jpeg'})));
+  return IMG[id];
+}
+function hydrateImages(){
+  document.querySelectorAll('img[data-img]').forEach(async el => { try { el.src = await img(el.dataset.img); } catch(e){} });
+}
+
+function loginView(msg=''){
+  $app.innerHTML = `<div class="login"><h1>HI Contacts</h1><p>Higney International trade show contacts</p>
+  <form id="f"><input type="password" id="pw" placeholder="Team password" autocomplete="current-password" autofocus>
+  <label><input type="checkbox" id="rem" checked> Remember on this device</label>
+  <button class="btn primary">Open</button><div class="err">${esc(msg)}</div></form></div>`;
+  document.getElementById('f').onsubmit = async e => {
+    e.preventDefault();
+    const pw = document.getElementById('pw').value;
+    try {
+      KEY = await deriveKey(pw);
+      await loadData();
+      if (document.getElementById('rem').checked) {
+        try { localStorage.setItem(KEYSTORE, b64.to(await crypto.subtle.exportKey('raw', KEY))); } catch(e){}
+      }
+      route();
+    } catch(err){ KEY = null; loginView('That password did not work.'); }
+  };
+}
+
+function companies(){ return Object.entries(DB.companies).map(([id,c]) => ({id, ...c})); }
+function lastDate(c){ return (c.entries.at(-1)?.date) || c.updated || c.created || ''; }
+function events(){
+  const s = new Set();
+  companies().forEach(c => c.entries.forEach(e => e.event && s.add(e.event)));
+  return [...s].sort().reverse();
+}
+function filtered(){
+  const q = st.q.trim().toLowerCase();
+  let list = companies().filter(c =>
+    (st.event === 'All' || c.entries.some(e => e.event === st.event)) &&
+    (st.status === 'All' || (c.follow_up?.status || 'new') === st.status) &&
+    (!q || JSON.stringify([c.name, c.category, c.location, c.website, c.tags, c.contacts, c.entries.map(e => e.note), c.follow_up]).toLowerCase().includes(q)));
+  list.sort(st.sort === 'az' ? (a,b) => a.name.localeCompare(b.name) : (a,b) => lastDate(b).localeCompare(lastDate(a)));
+  return list;
+}
+const fmtDate = d => d ? new Date(d).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}) : '';
+const pill = s => `<span class="pill" style="background:${STATUS_COLORS[s] || 'var(--s-new)'}">${esc(s)}</span>`;
+function firstImage(c){ for (const e of [...c.entries].reverse()) if (e.images?.length) return e.images[0]; return null; }
+
+function header(){
+  return `<header><div class="wrap"><div class="brand" onclick="location.hash=''">HI Contacts<small>Higney International</small></div><div class="spacer"></div>
+  <button class="btn" onclick="exportCsv()">Export CSV</button><button class="btn" onclick="logout()">Lock</button></div></header>`;
+}
+
+function listView(){
+  const evs = events();
+  const list = filtered();
+  const statuses = ['All','new','follow up','contacted','meeting','quoting','won','pass'];
+  $app.innerHTML = header() + `<div class="wrap">
+  <div class="controls"><input type="search" id="q" placeholder="Search companies, people, notes" value="${esc(st.q)}">
+  <select id="status">${statuses.map(s => `<option ${s===st.status?'selected':''}>${s}</option>`).join('')}</select>
+  <select id="sort"><option value="recent" ${st.sort==='recent'?'selected':''}>Most recent</option><option value="az" ${st.sort==='az'?'selected':''}>A to Z</option></select></div>
+  <div class="chips">${['All', ...evs].map(e => `<span class="chip ${e===st.event?'on':''}" data-ev="${esc(e)}">${esc(e)}</span>`).join('')}</div>
+  <p class="count">${list.length} ${list.length === 1 ? 'company' : 'companies'}</p>
+  ${list.length ? `<div class="grid">${list.map(c => {
+    const im = firstImage(c);
+    const ppl = c.contacts.map(p => p.name).filter(Boolean).slice(0,2).join(', ');
+    return `<div class="card" onclick="location.hash='c/${encodeURIComponent(c.id)}'">
+      <div class="thumb">${im ? `<img data-img="${im}" alt="">` : esc((c.name[0]||'?').toUpperCase())}</div>
+      <div class="body"><h3>${esc(c.name)}</h3><div class="meta">${esc([c.category, c.location].filter(Boolean).join(' · '))}</div>
+      <div class="meta">${esc(ppl)}</div><div class="meta">${fmtDate(lastDate(c))}</div>${pill(c.follow_up?.status || 'new')}</div></div>`;
+  }).join('')}</div>` : `<div class="empty">${companies().length ? 'Nothing matches that search.' : 'No cards yet. Send Artemis a photo of a business card with a note and it lands here.'}</div>`}
+  </div>`;
+  const q = document.getElementById('q');
+  q.oninput = () => { st.q = q.value; const pos = q.selectionStart; listView(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos); };
+  document.getElementById('status').onchange = e => { st.status = e.target.value; listView(); };
+  document.getElementById('sort').onchange = e => { st.sort = e.target.value; listView(); };
+  document.querySelectorAll('.chip').forEach(ch => ch.onclick = () => { st.event = ch.dataset.ev; listView(); });
+  hydrateImages();
+}
+
+function detailView(id){
+  const c = DB.companies[id];
+  if (!c) { location.hash = ''; return; }
+  const byId = Object.fromEntries(c.contacts.map(p => [p.id, p]));
+  const site = c.website ? (c.website.startsWith('http') ? c.website : 'https://' + c.website) : '';
+  const fu = c.follow_up || {};
+  $app.innerHTML = header() + `<div class="wrap detail">
+  <span class="back" onclick="location.hash=''">&larr; All companies</span>
+  <h1>${esc(c.name)}</h1>
+  <div class="facts">${[c.category, c.location].filter(Boolean).map(esc).join(' · ')}${site ? ` <a href="${esc(site)}" target="_blank" rel="noopener">${esc(c.website)}</a>` : ''}</div>
+  <div class="section"><h2>Follow up</h2>${pill(fu.status || 'new')}
+    ${fu.next_step ? `<div class="next" style="margin-top:8px">${esc(fu.next_step)}${fu.due ? ` <span class="meta">by ${esc(fu.due)}</span>` : ''}</div>` : ''}
+    ${c.tags?.length ? `<div class="meta" style="margin-top:6px">${c.tags.map(esc).join(' · ')}</div>` : ''}</div>
+  <div class="section"><h2>People</h2>${c.contacts.length ? c.contacts.map(p => `<div class="person"><b>${esc(p.name || 'Unnamed')}</b>${p.title ? ` <span class="meta">${esc(p.title)}</span>` : ''}
+    <div class="links">${p.email ? `<a href="mailto:${esc(p.email)}">${esc(p.email)}</a>` : ''}${p.phone ? `<a href="tel:${esc(p.phone)}">${esc(p.phone)}</a>` : ''}${p.mobile ? `<a href="tel:${esc(p.mobile)}">${esc(p.mobile)} (cell)</a>` : ''}${p.linkedin ? `<a href="${esc(p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin)}" target="_blank" rel="noopener">LinkedIn</a>` : ''}</div>
+    ${p.address ? `<div class="meta">${esc(p.address)}</div>` : ''}</div>`).join('') : '<div class="meta">No people on file yet.</div>'}</div>
+  <div class="section"><h2>Cards and notes</h2>${[...c.entries].reverse().map(e => `<div class="entry">
+    <div class="when">${fmtDate(e.date)}${e.event ? ' · ' + esc(e.event) : ''}${e.met_by ? ' · met by ' + esc(e.met_by) : ''}${e.contact_ids?.length ? ' · ' + e.contact_ids.map(i => esc(byId[i]?.name || '')).filter(Boolean).join(', ') : ''}</div>
+    ${e.note ? `<p>${esc(e.note)}</p>` : ''}
+    ${e.images?.length ? `<div class="shots">${e.images.map(i => `<img data-img="${i}" alt="Business card" onclick="zoom(this)">`).join('')}</div>` : ''}</div>`).join('') || '<div class="meta">Nothing yet.</div>'}</div>
+  </div>`;
+  window.scrollTo(0,0);
+  hydrateImages();
+}
+
+function zoom(el){ document.getElementById('lbimg').src = el.src; document.getElementById('lb').classList.add('on'); }
+function logout(){ try { localStorage.removeItem(KEYSTORE); } catch(e){} KEY = null; DB = null; location.hash = ''; loginView(); }
+function exportCsv(){
+  const rows = [['Company','Category','Location','Website','Status','Next step','Person','Title','Email','Phone','Mobile','Events','Notes','Last contact']];
+  filtered().forEach(c => {
+    const evs = [...new Set(c.entries.map(e => e.event).filter(Boolean))].join('; ');
+    const notes = c.entries.map(e => e.note).filter(Boolean).join(' | ');
+    const ppl = c.contacts.length ? c.contacts : [{}];
+    ppl.forEach(p => rows.push([c.name, c.category, c.location, c.website, c.follow_up?.status, c.follow_up?.next_step, p.name, p.title, p.email, p.phone, p.mobile, evs, notes, fmtDate(lastDate(c))]));
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'hi-contacts.csv'; a.click();
+}
+
+function route(){
+  if (!DB) return loginView();
+  const m = location.hash.match(/^#c\/(.+)$/);
+  m ? detailView(decodeURIComponent(m[1])) : listView();
+}
+window.addEventListener('hashchange', route);
+
+(async () => {
+  let saved = null;
+  try { saved = localStorage.getItem(KEYSTORE); } catch(e){}
+  if (saved) {
+    try {
+      KEY = await crypto.subtle.importKey('raw', b64.from(saved), 'AES-GCM', false, ['decrypt']);
+      await loadData();
+      return route();
+    } catch(e){ KEY = null; }
+  }
+  loginView();
+})();
+</script>
+</body>
+</html>
