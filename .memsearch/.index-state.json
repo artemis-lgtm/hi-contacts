@@ -1,16 +1,18 @@
 {
   "collection": "ms_hi_contacts_pages_b328e454",
   "failed_files": [],
-  "last_completed_at": "2026-11-08T19:30:22.763294Z",
-  "last_error": "RuntimeError: Could not open the local Milvus database at /Users/artemis/.memsearch/milvus.db: <ConnectionConfigException: (code=1, message=Open local milvus failed)>. This can happen if another process already has the database open, if file permissions are wrong, or if the file is damaged. Close other processes using this database and verify that the path is writable. If the problem continues, preserve the database and inspect the application logs before attempting recovery.",
-  "last_failed_at": "2026-11-08T19:30:22.763294Z",
-  "last_started_at": "2026-11-08T19:30:21.924697Z",
+  "indexed_chunks": 1,
+  "indexed_files": 1,
+  "last_completed_at": "2026-11-08T19:30:35.995736Z",
+  "last_started_at": "2026-11-08T19:30:33.738376Z",
+  "last_success_at": "2026-11-08T19:30:35.995736Z",
   "milvus_uri": "~/.memsearch/milvus.db",
   "operation": "index",
   "paths": [
     "/Users/artemis/projects/hi-contacts-pages/.memsearch/memory"
   ],
   "schema_version": 1,
-  "status": "error",
-  "updated_at": "2026-11-08T19:30:22.763294Z"
+  "status": "ok",
+  "total_files": 1,
+  "updated_at": "2026-11-08T19:30:35.995736Z"
 }
