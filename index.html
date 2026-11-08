@@ -71,6 +71,18 @@ header .wrap{display:flex;align-items:center;gap:12px;padding-top:14px;padding-b
 .shots{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .shots img{height:130px;max-width:100%;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;object-fit:cover}
 .next{font-size:14px}
+.gallery{position:relative;background:#111;border-radius:12px;overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow);touch-action:pan-y;user-select:none}
+.gallery .stage{height:min(62vh,520px);display:flex;align-items:center;justify-content:center}
+.gallery .stage img{max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in}
+.gallery .nav,.lightbox .nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.88);color:#111;font-size:24px;line-height:44px;text-align:center;cursor:pointer;padding:0}
+.gallery .prev,.lightbox .prev{left:10px}.gallery .next,.lightbox .next{right:10px}
+.gallery .count,.lightbox .count{position:absolute;top:10px;right:12px;background:rgba(0,0,0,.6);color:#fff;font-size:13px;padding:3px 9px;border-radius:999px}
+.gallery .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 14px 10px;color:#fff;font-size:13px;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+.strip{display:flex;gap:6px;overflow-x:auto;padding:8px 2px 2px;margin:-6px 0 14px}
+.strip img{width:64px;height:64px;object-fit:cover;border-radius:6px;border:2px solid transparent;cursor:pointer;opacity:.7;flex:none}
+.strip img.on{border-color:var(--accent,#1f3a5f);opacity:1}
+.card .thumb{position:relative}
+.card .thumb .n{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:1px 7px;border-radius:999px}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:20;padding:16px}
 .lightbox.on{display:flex}
 .lightbox img{max-width:100%;max-height:100%;border-radius:6px}
@@ -86,7 +98,7 @@ header .wrap{display:flex;align-items:center;gap:12px;padding-top:14px;padding-b
 </head>
 <body>
 <div id="app"></div>
-<div class="lightbox" id="lb" onclick="this.classList.remove('on')"><img id="lbimg" alt=""></div>
+<div class="lightbox" id="lb" onclick="if(event.target===this||event.target.id==='lbimg')closeLb()"><img id="lbimg" alt=""><button class="nav prev" onclick="event.stopPropagation();step(-1)" aria-label="Previous">&#8249;</button><button class="nav next" onclick="event.stopPropagation();step(1)" aria-label="Next">&#8250;</button><span class="count" id="lbcount"></span></div>
 <script>
 const KEYSTORE = 'hic-key-v1';
 const STATUS_COLORS = {'new':'var(--s-new)','follow up':'var(--s-follow)','contacted':'var(--s-contacted)','meeting':'var(--s-meeting)','quoting':'var(--s-quoting)','won':'var(--s-won)','pass':'var(--s-pass)'};
@@ -184,7 +196,7 @@ function listView(){
     const im = firstImage(c);
     const ppl = c.contacts.map(p => p.name).filter(Boolean).slice(0,2).join(', ');
     return `<div class="card" onclick="location.hash='c/${encodeURIComponent(c.id)}'">
-      <div class="thumb">${im ? `<img data-img="${im}" alt="">` : esc((c.name[0]||'?').toUpperCase())}</div>
+      <div class="thumb">${im ? `<img data-img="${im}" alt="">` : esc((c.name[0]||'?').toUpperCase())}${allImages(c).length > 1 ? `<span class="n">${allImages(c).length} photos</span>` : ''}</div>
       <div class="body"><h3>${esc(c.name)}</h3><div class="meta">${esc([c.category, c.location].filter(Boolean).join(' · '))}</div>
       <div class="meta">${esc(ppl)}</div><div class="meta">${fmtDate(lastDate(c))}</div>${pill(c.follow_up?.status || 'new')}</div></div>`;
   }).join('')}</div>` : `<div class="empty">${companies().length ? 'Nothing matches that search.' : 'No cards yet. Send Artemis a photo of a business card with a note and it lands here.'}</div>`}
@@ -206,6 +218,7 @@ function detailView(id){
   $app.innerHTML = header() + `<div class="wrap detail">
   <span class="back" onclick="location.hash=''">&larr; All companies</span>
   <h1>${esc(c.name)}</h1>
+  ${gallery(c)}
   <div class="facts">${[c.category, c.location].filter(Boolean).map(esc).join(' · ')}${site ? ` <a href="${esc(site)}" target="_blank" rel="noopener">${esc(c.website)}</a>` : ''}</div>
   ${c.products?.length ? `<div class="section"><h2>What they make</h2><div>${c.products.map(esc).join(' · ')}</div></div>` : ''}
   <div class="section"><h2>Follow up</h2>${pill(fu.status || 'new')}
@@ -217,13 +230,62 @@ function detailView(id){
   <div class="section"><h2>Cards and notes</h2>${[...c.entries].reverse().map(e => `<div class="entry">
     <div class="when">${fmtDate(e.date)}${e.event ? ' · ' + esc(e.event) : ''}${e.met_by ? ' · met by ' + esc(e.met_by) : ''}${e.contact_ids?.length ? ' · ' + e.contact_ids.map(i => esc(byId[i]?.name || '')).filter(Boolean).join(', ') : ''}</div>
     ${e.note ? `<p>${esc(e.note)}</p>` : ''}
-    ${e.images?.length ? `<div class="shots">${e.images.map(i => `<img data-img="${i}" alt="Business card" onclick="zoom(this)">`).join('')}</div>` : ''}</div>`).join('') || '<div class="meta">Nothing yet.</div>'}</div>
+    ${e.images?.length ? `<div class="shots">${e.images.map(i => `<img data-img="${i}" alt="Photo" onclick="openLb('${i}')">`).join('')}</div>` : ''}</div>`).join('') || '<div class="meta">Nothing yet.</div>'}</div>
   </div>`;
   window.scrollTo(0,0);
   hydrateImages();
 }
 
-function zoom(el){ document.getElementById('lbimg').src = el.src; document.getElementById('lb').classList.add('on'); }
+// Photo flip-through: every photo the company has, oldest first, in one strip.
+let G = {ids: [], i: 0};
+function allImages(c){ return c.entries.flatMap(e => (e.images || []).map(id => ({id, note: e.note || '', date: e.date}))); }
+function gallery(c){
+  const ims = allImages(c);
+  G = {ids: ims, i: 0};
+  if (!ims.length) return '';
+  const multi = ims.length > 1;
+  return `<div class="gallery" id="gal"><div class="stage"><img id="galimg" data-img="${ims[0].id}" alt="Photo" onclick="openLb()"></div>
+    ${multi ? `<button class="nav prev" onclick="step(-1)" aria-label="Previous">&#8249;</button><button class="nav next" onclick="step(1)" aria-label="Next">&#8250;</button><span class="count" id="galcount">1 / ${ims.length}</span>` : ''}
+    <div class="cap" id="galcap">${esc(ims[0].note)}</div></div>
+    ${multi ? `<div class="strip">${ims.map((m, k) => `<img data-img="${m.id}" class="${k ? '' : 'on'}" alt="" onclick="show(${k})">`).join('')}</div>` : ''}`;
+}
+async function show(k){
+  if (!G.ids.length) return;
+  G.i = (k + G.ids.length) % G.ids.length;
+  const m = G.ids[G.i], url = await img(m.id);
+  const g = document.getElementById('galimg'); if (g) g.src = url;
+  const cap = document.getElementById('galcap'); if (cap) cap.textContent = m.note;
+  const gc = document.getElementById('galcount'); if (gc) gc.textContent = `${G.i + 1} / ${G.ids.length}`;
+  document.querySelectorAll('.strip img').forEach((el, j) => el.classList.toggle('on', j === G.i));
+  if (document.getElementById('lb').classList.contains('on')) {
+    document.getElementById('lbimg').src = url;
+    document.getElementById('lbcount').textContent = G.ids.length > 1 ? `${G.i + 1} / ${G.ids.length}` : '';
+  }
+}
+function step(d){ show(G.i + d); }
+function openLb(id){
+  if (id) { const k = G.ids.findIndex(m => m.id === id); if (k >= 0) G.i = k; }
+  const lb = document.getElementById('lb');
+  lb.classList.add('on');
+  lb.querySelectorAll('.nav').forEach(b => b.style.display = G.ids.length > 1 ? '' : 'none');
+  show(G.i);
+}
+function closeLb(){ document.getElementById('lb').classList.remove('on'); }
+document.addEventListener('keydown', e => {
+  if (!G.ids.length || !location.hash) return;
+  if (e.key === 'ArrowRight') step(1);
+  else if (e.key === 'ArrowLeft') step(-1);
+  else if (e.key === 'Escape') closeLb();
+});
+// swipe on phones, for both the inline gallery and the full-screen view
+let SX = null;
+document.addEventListener('touchstart', e => { if (e.target.closest('.gallery,.lightbox')) SX = e.touches[0].clientX; }, {passive: true});
+document.addEventListener('touchend', e => {
+  if (SX === null) return;
+  const dx = e.changedTouches[0].clientX - SX; SX = null;
+  if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
+}, {passive: true});
+function zoom(el){ openLb(); }
 function logout(){ try { localStorage.removeItem(KEYSTORE); } catch(e){} KEY = null; DB = null; location.hash = ''; loginView(); }
 function exportCsv(){
   const rows = [['Company','Category','Location','Website','Status','Next step','Person','Title','Email','Phone','Mobile','Events','Notes','Last contact']];
