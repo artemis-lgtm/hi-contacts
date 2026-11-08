@@ -73,6 +73,9 @@ header .wrap{display:flex;align-items:center;gap:12px;padding-top:14px;padding-b
 .next{font-size:14px}
 .gallery{position:relative;background:#111;border-radius:12px;overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow);touch-action:pan-y;user-select:none}
 .gallery .stage{min-height:240px;max-height:min(70vh,560px);display:flex;align-items:center;justify-content:center}
+.gallery .stage video,.lightbox video{max-width:100%;max-height:min(70vh,560px);background:#000}
+.lightbox video{max-height:100%}
+.strip .v{position:relative;flex:none}.strip .v::after{content:'\25B6';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;text-shadow:0 1px 4px #000;pointer-events:none}
 .gallery .stage img{max-width:100%;max-height:min(70vh,560px);object-fit:contain;cursor:zoom-in}
 .gallery .nav,.lightbox .nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.88);color:#111;font-size:24px;line-height:44px;text-align:center;cursor:pointer;padding:0}
 .gallery .prev,.lightbox .prev{left:10px}.gallery .next,.lightbox .next{right:10px}
@@ -98,7 +101,7 @@ header .wrap{display:flex;align-items:center;gap:12px;padding-top:14px;padding-b
 </head>
 <body>
 <div id="app"></div>
-<div class="lightbox" id="lb" onclick="if(event.target===this||event.target.id==='lbimg')closeLb()"><img id="lbimg" alt=""><button class="nav prev" onclick="event.stopPropagation();step(-1)" aria-label="Previous">&#8249;</button><button class="nav next" onclick="event.stopPropagation();step(1)" aria-label="Next">&#8250;</button><span class="count" id="lbcount"></span></div>
+<div class="lightbox" id="lb" onclick="if(event.target===this||event.target.id==='lbimg')closeLb()"><img id="lbimg" alt=""><video id="lbvid" controls playsinline style="display:none"></video><button class="nav prev" onclick="event.stopPropagation();step(-1)" aria-label="Previous">&#8249;</button><button class="nav next" onclick="event.stopPropagation();step(1)" aria-label="Next">&#8250;</button><span class="count" id="lbcount"></span></div>
 <script>
 const KEYSTORE = 'hic-key-v1';
 const STATUS_COLORS = {'new':'var(--s-new)','follow up':'var(--s-follow)','contacted':'var(--s-contacted)','meeting':'var(--s-meeting)','quoting':'var(--s-quoting)','won':'var(--s-won)','pass':'var(--s-pass)'};
@@ -175,7 +178,7 @@ function filtered(){
 }
 const fmtDate = d => d ? new Date(d).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}) : '';
 const pill = s => `<span class="pill" style="background:${STATUS_COLORS[s] || 'var(--s-new)'}">${esc(s)}</span>`;
-function firstImage(c){ for (const e of [...c.entries].reverse()) if (e.images?.length) return e.images[0]; return null; }
+function firstImage(c){ for (const e of [...c.entries].reverse()) if (e.images?.length) return e.images[0]; for (const e of c.entries) if (e.videos?.length) return e.videos[0]; return null; }
 
 function header(){
   return `<header><div class="wrap"><div class="brand" onclick="location.hash=''">HI Contacts<small>Higney International</small></div><div class="spacer"></div>
@@ -196,7 +199,7 @@ function listView(){
     const im = firstImage(c);
     const ppl = c.contacts.map(p => p.name).filter(Boolean).slice(0,2).join(', ');
     return `<div class="card" onclick="location.hash='c/${encodeURIComponent(c.id)}'">
-      <div class="thumb">${im ? `<img data-img="${im}" alt="">` : esc((c.name[0]||'?').toUpperCase())}${allImages(c).length > 1 ? `<span class="n">${allImages(c).length} photos</span>` : ''}</div>
+      <div class="thumb">${im ? `<img data-img="${im}" alt="">` : esc((c.name[0]||'?').toUpperCase())}${allImages(c).length > 1 ? `<span class="n">${mediaLabel(c)}</span>` : ''}</div>
       <div class="body"><h3>${esc(c.name)}</h3><div class="meta">${esc([c.category, c.location].filter(Boolean).join(' · '))}</div>
       <div class="meta">${esc(ppl)}</div><div class="meta">${fmtDate(lastDate(c))}</div>${pill(c.follow_up?.status || 'new')}</div></div>`;
   }).join('')}</div>` : `<div class="empty">${companies().length ? 'Nothing matches that search.' : 'No cards yet. Send Artemis a photo of a business card with a note and it lands here.'}</div>`}
@@ -234,31 +237,53 @@ function detailView(id){
   </div>`;
   window.scrollTo(0,0);
   hydrateImages();
+  show(0);
 }
 
 // Photo flip-through: every photo the company has, oldest first, in one strip.
 let G = {ids: [], i: 0};
-function allImages(c){ return c.entries.flatMap(e => (e.images || []).map(id => ({id, note: e.note || '', date: e.date}))); }
+function allImages(c){ return c.entries.flatMap(e => [...(e.images || []).map(id => ({id, v: false})), ...(e.videos || []).map(id => ({id, v: true}))].map(m => ({...m, note: e.note || '', date: e.date}))); }
+const VID = {};
+function vid(id){
+  if (!VID[id]) VID[id] = fetch('img/' + id + '.vbin').then(r => r.arrayBuffer()).then(open).then(b => URL.createObjectURL(new Blob([b], {type:'video/mp4'})));
+  return VID[id];
+}
+function mediaLabel(c){
+  const all = allImages(c), nv = all.filter(m => m.v).length, np = all.length - nv;
+  return [np ? `${np} photo${np > 1 ? 's' : ''}` : '', nv ? `${nv} video${nv > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ');
+}
+async function paint(imgEl, vidEl, m){
+  // one slot, two element types: show whichever this item is, pause the other
+  if (m.v) {
+    imgEl.style.display = 'none'; vidEl.style.display = '';
+    vidEl.poster = await img(m.id); vidEl.src = await vid(m.id);
+  } else {
+    vidEl.pause(); vidEl.removeAttribute('src'); vidEl.load(); vidEl.style.display = 'none';
+    imgEl.style.display = ''; imgEl.src = await img(m.id);
+  }
+}
 function gallery(c){
   const ims = allImages(c);
   G = {ids: ims, i: 0};
   if (!ims.length) return '';
   const multi = ims.length > 1;
-  return `<div class="gallery" id="gal"><div class="stage"><img id="galimg" data-img="${ims[0].id}" alt="Photo" onclick="openLb()"></div>
+  return `<div class="gallery" id="gal"><div class="stage"><img id="galimg" alt="Photo" onclick="openLb()"><video id="galvid" controls playsinline style="display:none"></video></div>
     ${multi ? `<button class="nav prev" onclick="step(-1)" aria-label="Previous">&#8249;</button><button class="nav next" onclick="step(1)" aria-label="Next">&#8250;</button><span class="count" id="galcount">1 / ${ims.length}</span>` : ''}
     <div class="cap" id="galcap">${esc(ims[0].note)}</div></div>
-    ${multi ? `<div class="strip">${ims.map((m, k) => `<img data-img="${m.id}" class="${k ? '' : 'on'}" alt="" onclick="show(${k})">`).join('')}</div>` : ''}`;
+    ${multi ? `<div class="strip">${ims.map((m, k) => `<span class="${m.v ? 'v' : ''}"><img data-img="${m.id}" class="${k ? '' : 'on'}" alt="" onclick="show(${k})"></span>`).join('')}</div>` : ''}`;
 }
 async function show(k){
   if (!G.ids.length) return;
   G.i = (k + G.ids.length) % G.ids.length;
-  const m = G.ids[G.i], url = await img(m.id);
-  const g = document.getElementById('galimg'); if (g) g.src = url;
+  const m = G.ids[G.i];
+  const g = document.getElementById('galimg'), gv = document.getElementById('galvid');
+  if (g && gv) paint(g, gv, m);
   const cap = document.getElementById('galcap'); if (cap) cap.textContent = m.note;
   const gc = document.getElementById('galcount'); if (gc) gc.textContent = `${G.i + 1} / ${G.ids.length}`;
   document.querySelectorAll('.strip img').forEach((el, j) => el.classList.toggle('on', j === G.i));
   if (document.getElementById('lb').classList.contains('on')) {
-    document.getElementById('lbimg').src = url;
+    if (gv) gv.pause();
+    paint(document.getElementById('lbimg'), document.getElementById('lbvid'), m);
     document.getElementById('lbcount').textContent = G.ids.length > 1 ? `${G.i + 1} / ${G.ids.length}` : '';
   }
 }
@@ -270,7 +295,7 @@ function openLb(id){
   lb.querySelectorAll('.nav').forEach(b => b.style.display = G.ids.length > 1 ? '' : 'none');
   show(G.i);
 }
-function closeLb(){ document.getElementById('lb').classList.remove('on'); }
+function closeLb(){ document.getElementById('lbvid').pause(); document.getElementById('lb').classList.remove('on'); }
 document.addEventListener('keydown', e => {
   if (!G.ids.length || !location.hash) return;
   if (e.key === 'ArrowRight') step(1);
