@@ -140,14 +140,25 @@ function events(){
   companies().forEach(c => c.entries.forEach(e => e.event && s.add(e.event)));
   return [...s].sort().reverse();
 }
+const STOP = new Set('a an and the for of to in on with we i need want some something like any that this those these is are be our'.split(' '));
+const stemW = w => w.length > 4 ? w.replace(/ies$/, 'y').replace(/(es|s)$/, '') : w;
+const wordsOf = t => (String(t || '').toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => !STOP.has(w)).map(stemW);
+function matchScore(c, q){
+  const want = [...new Set(wordsOf(q))];
+  if (!want.length) return 1;
+  const hay = new Set(wordsOf(JSON.stringify([c.name, c.category, c.location, c.website, c.tags, c.products, c.contacts, c.entries.map(e => e.note), c.follow_up])));
+  const strong = new Set(wordsOf([c.name, c.category, (c.products || []).join(' ')].join(' ')));
+  return want.reduce((n, w) => n + (strong.has(w) ? 3 : hay.has(w) ? 1 : 0), 0);
+}
 function filtered(){
   const q = st.q.trim().toLowerCase();
   let list = companies().filter(c =>
     (st.event === 'All' || c.entries.some(e => e.event === st.event)) &&
     (st.status === 'archived' ? c.archived : !c.archived) &&
     (st.status === 'All' || st.status === 'archived' || (c.follow_up?.status || 'new') === st.status) &&
-    (!q || JSON.stringify([c.name, c.category, c.location, c.website, c.tags, c.contacts, c.entries.map(e => e.note), c.follow_up]).toLowerCase().includes(q)));
+    (!q || matchScore(c, q) > 0));
   list.sort(st.sort === 'az' ? (a,b) => a.name.localeCompare(b.name) : (a,b) => lastDate(b).localeCompare(lastDate(a)));
+  if (q) list.sort((a,b) => matchScore(b, q) - matchScore(a, q));
   return list;
 }
 const fmtDate = d => d ? new Date(d).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}) : '';
@@ -164,7 +175,7 @@ function listView(){
   const list = filtered();
   const statuses = ['All','new','follow up','contacted','meeting','quoting','won','pass','archived'];
   $app.innerHTML = header() + `<div class="wrap">
-  <div class="controls"><input type="search" id="q" placeholder="Search companies, people, notes" value="${esc(st.q)}">
+  <div class="controls"><input type="search" id="q" placeholder="Search a need: beach club side tables, planters, ceiling tile" value="${esc(st.q)}">
   <select id="status">${statuses.map(s => `<option ${s===st.status?'selected':''}>${s}</option>`).join('')}</select>
   <select id="sort"><option value="recent" ${st.sort==='recent'?'selected':''}>Most recent</option><option value="az" ${st.sort==='az'?'selected':''}>A to Z</option></select></div>
   <div class="chips">${['All', ...evs].map(e => `<span class="chip ${e===st.event?'on':''}" data-ev="${esc(e)}">${esc(e)}</span>`).join('')}</div>
@@ -196,6 +207,7 @@ function detailView(id){
   <span class="back" onclick="location.hash=''">&larr; All companies</span>
   <h1>${esc(c.name)}</h1>
   <div class="facts">${[c.category, c.location].filter(Boolean).map(esc).join(' · ')}${site ? ` <a href="${esc(site)}" target="_blank" rel="noopener">${esc(c.website)}</a>` : ''}</div>
+  ${c.products?.length ? `<div class="section"><h2>What they make</h2><div>${c.products.map(esc).join(' · ')}</div></div>` : ''}
   <div class="section"><h2>Follow up</h2>${pill(fu.status || 'new')}
     ${fu.next_step ? `<div class="next" style="margin-top:8px">${esc(fu.next_step)}${fu.due ? ` <span class="meta">by ${esc(fu.due)}</span>` : ''}</div>` : ''}
     ${c.tags?.length ? `<div class="meta" style="margin-top:6px">${c.tags.map(esc).join(' · ')}</div>` : ''}</div>
